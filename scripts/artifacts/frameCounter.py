@@ -43,6 +43,26 @@ def count_video_frames(video_path):
     cap.release()
     return frame_count
 
+def count_fps(video_path):
+    """
+    Frames per second in a given video file.
+
+    Args:
+        video_path (str): The path to the video file.
+
+    Returns:
+        int: The frames per second in the video, or -1 if an error occurs.
+    """
+    cap = cv2.VideoCapture(video_path)
+    
+    if not cap.isOpened():
+        print(f"Error: Could not open video file at {video_path}")
+        return -1
+    
+    fps = int(cap.get(cv2.CAP_PROP_FPS))
+    cap.release()
+    return fps
+
 @artifact_processor
 def frames(files_found, report_folder, seeker, wrap_text):
     artifact_info = inspect.stack()[0]
@@ -59,6 +79,7 @@ def frames(files_found, report_folder, seeker, wrap_text):
         
         else:
             total_frames = count_video_frames(file_found)
+            fps = count_fps(file_found)
             
             if total_frames != -1:
                 
@@ -72,14 +93,16 @@ def frames(files_found, report_folder, seeker, wrap_text):
                         #logfunc(f'{filename}-{artifact_info}')
                         media_item = check_in_media(tentative_media, filenamem)
                         break
-                    
-                data_list.append((media_item,filename, total_frames,file_found))
+                
+                length_seconds = total_frames / fps
+                
+                data_list.append((media_item,filename,fps,total_frames,length_seconds,file_found))
                 logfunc(f"The video '{filename}' contains {total_frames} frames.")
                 allframes = allframes + total_frames
                 
         
             
-    data_headers = (('Image', 'media'),'Filename','Total Frames','File Source')
+    data_headers = (('Image', 'media'),'Filename','Frames per Second','Total Frames','Length in Seconds','File Source')
     
     return data_headers, data_list, f'Total frames for all media: {allframes}'
 
